@@ -1,5 +1,7 @@
 use chrono::{DateTime, Local, Timelike};
-use std::collections::BTreeMap;
+use image::{ImageBuffer, Rgb, RgbImage};
+use json::JsonValue;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -13,21 +15,52 @@ fn main() -> std::io::Result<()> {
 
     let parsed = json::parse(&contents).unwrap();
 
+    let base: HashMap<&str, &JsonValue> = parsed["base"].entries().collect();
+
+    let width: u32 = base["width"].as_u32().unwrap();
+    let height: u32 = base["height"].as_u32().unwrap();
+    let pixels: Vec<u8> = base["pixels"]
+        .members()
+        .map(|x| x.as_u8().unwrap())
+        .collect();
+
+    let palettes = parsed["palettes"].clone();
+
+    let mut image: RgbImage = ImageBuffer::new(width, height);
+
     let timeline: BTreeMap<u32, &str> = parsed["timeline"]
         .entries()
         .map(|(time, palette)| (time.parse::<u32>().unwrap(), palette.as_str().unwrap()))
         .collect();
 
     let mut last_time = timeline.keys().last().unwrap();
-    let mut next_time = timeline.keys().next().unwrap();
     for (time, _) in timeline.iter() {
-        last_time = next_time;
-        next_time = time;
         if time > &seconds {
             break;
         }
+        last_time = time;
     }
-    println!("{} < {} < {}", last_time, seconds, next_time);
+
+    let palette = &palettes[*timeline.get(last_time).unwrap()];
+
+    let colors: Vec<[u8; 3]> = palette["colors"]
+        .members()
+        .map(|x| {
+            [
+                x[0].as_u8().unwrap(),
+                x[1].as_u8().unwrap(),
+                x[2].as_u8().unwrap(),
+            ]
+        })
+        .collect();
+
+    for (x, y, pixel) in image.enumerate_pixels_mut() {
+        let index = (y * width + x) as usize;
+        let color = colors[pixels[index] as usize];
+        *pixel = Rgb(color);
+    }
+
+    image.save("test.png").unwrap();
 
     Ok(())
 }
