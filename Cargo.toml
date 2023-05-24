@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.24"
 gl = "0.14.0"
-glutin = "0.26.0"
+glutin = "0.29.1"
 json = "0.12.4"
+rand = "0.8.5"
