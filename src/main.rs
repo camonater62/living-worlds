@@ -17,8 +17,8 @@ struct Cycle {
 
 fn main() -> std::io::Result<()> {
     // Json processing
-    let month = Local::now().month();
-    let file = match month {
+    let month: u32 = Local::now().month();
+    let file: &str = match month {
         1 => include_str!("../scenes/January-Clear.json"),
         2 => include_str!("../scenes/February-Clear.json"),
         3 => include_str!("../scenes/March-Clear.json"),
@@ -55,10 +55,10 @@ fn main() -> std::io::Result<()> {
         })
         .collect();
 
-    let palettes_raw = &parsed["palettes"];
+    let palettes_raw: &JsonValue = &parsed["palettes"];
     let mut palettes: HashMap<String, [[u8; 3]; 256]> = HashMap::new();
     let mut cycles: HashMap<String, Vec<Cycle>> = HashMap::new();
-    let cycle_speed = 280;
+    let cycle_speed: u32 = 280;
     for (name, value) in palettes_raw.entries() {
         let cycles_vec: Vec<Cycle> = value["cycles"]
             .members()
@@ -76,16 +76,16 @@ fn main() -> std::io::Result<()> {
             })
             .collect();
         cycles.insert(name.to_string(), cycles_vec);
-        let colors = value["colors"]
+        let colors: Vec<[u8; 3]> = value["colors"]
             .members()
-            .map(|x| {
+            .map(|x: &JsonValue| {
                 let r = x[0].as_u8().unwrap();
                 let g = x[1].as_u8().unwrap();
                 let b = x[2].as_u8().unwrap();
                 [r, g, b]
             })
             .collect::<Vec<[u8; 3]>>();
-        let mut palette = [[0; 3]; 256];
+        let mut palette: [[u8; 3]; 256] = [[0; 3]; 256];
         for (i, color) in colors.iter().enumerate() {
             palette[i] = *color;
         }
